@@ -3,18 +3,22 @@
 import React from "react";
 import { LayoutDashboard, FolderKanban, ListTodo, Wrench, Bell, MessageSquare, Settings, Users, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "#" },
-    { icon: FolderKanban, label: "Projects", href: "#" },
-    { icon: ListTodo, label: "Task list", href: "#", active: true },
-    { icon: Users, label: "Users", href: "#" },
-    { icon: BarChart3, label: "Analytics", href: "#" },
-    { icon: Bell, label: "Notifications", href: "#", badge: 2 },
-    { icon: Settings, label: "Settings", href: "#" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
+    { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
+    { icon: ListTodo, label: "Task list", href: "/admin/tasks" },
+    { icon: Users, label: "Users", href: "/admin/users" },
+    { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+    { icon: Bell, label: "Notifications", href: "/admin/notifications", badge: 2 },
+    { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
 
 export function Sidebar() {
+    const pathname = usePathname();
+
     return (
         <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen fixed left-0 top-0">
             <div className="p-8 pb-12 flex items-center gap-3">
@@ -25,26 +29,29 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 px-4 space-y-1">
-                {menuItems.map((item) => (
-                    <a
-                        key={item.label}
-                        href={item.href}
-                        className={cn(
-                            "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group relative",
-                            item.active
-                                ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
-                                : "text-text-secondary hover:bg-gray-50 hover:text-brand-primary"
-                        )}
-                    >
-                        <item.icon className={cn("w-5 h-5", item.active ? "text-white" : "text-text-muted group-hover:text-brand-primary")} />
-                        <span className="font-medium">{item.label}</span>
-                        {item.badge && (
-                            <span className="ml-auto bg-[#e1f5fe] text-brand-secondary text-xs font-bold px-2 py-0.5 rounded-full">
-                                {item.badge}
-                            </span>
-                        )}
-                    </a>
-                ))}
+                {menuItems.map((item) => {
+                    const isActive = pathname?.startsWith(item.href) || pathname === item.href;
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={cn(
+                                "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group relative",
+                                isActive
+                                    ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
+                                    : "text-text-secondary hover:bg-gray-50 hover:text-brand-primary"
+                            )}
+                        >
+                            <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-text-muted group-hover:text-brand-primary")} />
+                            <span className="font-medium">{item.label}</span>
+                            {item.badge && (
+                                <span className="ml-auto bg-[#e1f5fe] text-brand-secondary text-xs font-bold px-2 py-0.5 rounded-full">
+                                    {item.badge}
+                                </span>
+                            )}
+                        </Link>
+                    );
+                })}
             </nav>
 
             <div className="p-6 mt-auto border-t border-gray-50">
