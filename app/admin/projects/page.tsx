@@ -54,7 +54,7 @@ export default function ProjectsPage() {
             const { data: adminData } = await supabase
                 .from('users')
                 .select('*')
-                .in('role', ['project_admin', 'super_admin']);
+                .eq('role', 'project_admin');
             if (adminData) {
                 setAdmins(adminData);
             }

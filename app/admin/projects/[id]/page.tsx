@@ -141,7 +141,11 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     }
 
     // Default Avatar helper
-    const getAvatar = (user: any) => user?.avatar_url || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150";
+    const getAvatar = (user: any) => {
+        if (user?.avatar_url) return user.avatar_url;
+        const name = user?.full_name || "Unknown";
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e2e8f0&color=475569&bold=true`;
+    };
 
     // Progress calculation based on tasks completion
     const completedTasks = tasks.filter(t => t.status === 'completed').length;
