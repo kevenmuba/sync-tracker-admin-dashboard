@@ -1,16 +1,17 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, FolderKanban, ListTodo, Wrench, Bell, MessageSquare } from "lucide-react";
+import { LayoutDashboard, FolderKanban, ListTodo, Wrench, Bell, MessageSquare, Settings, Users, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "#" },
     { icon: FolderKanban, label: "Projects", href: "#" },
     { icon: ListTodo, label: "Task list", href: "#", active: true },
-    { icon: Wrench, label: "Services", href: "#" },
+    { icon: Users, label: "Users", href: "#" },
+    { icon: BarChart3, label: "Analytics", href: "#" },
     { icon: Bell, label: "Notifications", href: "#", badge: 2 },
-    { icon: MessageSquare, label: "Chat", href: "#" },
+    { icon: Settings, label: "Settings", href: "#" },
 ];
 
 export function Sidebar() {
