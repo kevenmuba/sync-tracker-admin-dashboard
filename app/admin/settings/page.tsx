@@ -48,6 +48,9 @@ export default function SettingsPage() {
     // Feedback States
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
+    const [searchValue, setSearchValue] = useState("");
+    const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+
     useEffect(() => {
         fetchUserProfile();
     }, []);
@@ -185,7 +188,12 @@ export default function SettingsPage() {
     if (loading) {
         return (
             <div className="flex flex-col h-full bg-[#f4f6f9] min-h-screen">
-                <Topbar />
+                <Topbar
+                    searchValue={searchValue}
+                    onSearchChange={setSearchValue}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                />
                 <div className="flex-1 flex items-center justify-center">
                     <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
                 </div>
@@ -197,7 +205,12 @@ export default function SettingsPage() {
 
     return (
         <div className="flex flex-col h-full bg-[#f4f6f9] min-h-screen">
-            <Topbar />
+            <Topbar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+            />
 
             <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-8 pb-12">
                 {/* Header Section */}

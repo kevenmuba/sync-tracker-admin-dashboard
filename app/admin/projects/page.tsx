@@ -29,6 +29,8 @@ export default function ProjectsPage() {
     const router = useRouter();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchValue, setSearchValue] = useState("");
+    const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
     // Create Modal State
     const [showCreateMenu, setShowCreateMenu] = useState(false);
@@ -68,7 +70,6 @@ export default function ProjectsPage() {
     useEffect(() => {
         fetchProjects();
 
-        // Real-time subscription
         const channel = supabase
             .channel('public:projects')
             .on(
@@ -84,6 +85,12 @@ export default function ProjectsPage() {
             supabase.removeChannel(channel);
         };
     }, []);
+
+    const filteredProjects = projects.filter(project =>
+        project.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+        (project.description || "").toLowerCase().includes(searchValue.toLowerCase()) ||
+        (project.project_admin?.full_name || "").toLowerCase().includes(searchValue.toLowerCase())
+    );
 
     const handleCreateProject = async () => {
         if (!newProjectName.trim()) return alert("Project name is required.");
@@ -101,7 +108,6 @@ export default function ProjectsPage() {
 
             if (error) throw error;
 
-            // If an admin was assigned, create a notification record for them
             if (newProjectAdmin) {
                 await supabase.from('notifications').insert({
                     user_id: newProjectAdmin,
@@ -139,99 +145,177 @@ export default function ProjectsPage() {
 
     return (
         <div className="flex flex-col h-full bg-[#f4f6f9] min-h-screen relative">
-            <Topbar />
+            <Topbar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+            />
 
             <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
                 {/* Header Area */}
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-center mb-10 bg-white p-7 rounded-[2rem] shadow-sm border border-gray-100/50">
                     <div>
-                        <h1 className="text-3xl font-bold text-brand-primary flex items-center gap-3">
-                            <FolderKanban className="w-8 h-8 text-brand-secondary" />
-                            All Projects
+                        <h1 className="text-3xl font-black text-brand-primary flex items-center gap-3 tracking-tight">
+                            <FolderKanban className="w-9 h-9 text-brand-secondary" />
+                            Projects Pipeline
                         </h1>
-                        <p className="text-text-secondary mt-1">Manage and track all organizational projects</p>
+                        <p className="text-text-secondary font-medium mt-1">Track and audit your organization's projects ({filteredProjects.length})</p>
                     </div>
                     <button
                         onClick={() => setShowCreateMenu(true)}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-primary/90 transition",
-                            "shadow-lg shadow-brand-primary/30 font-semibold"
+                            "flex items-center gap-2 px-7 py-3.5 bg-brand-primary text-white rounded-2xl hover:bg-brand-primary/90 transition-all",
+                            "shadow-xl shadow-brand-primary/25 font-black uppercase text-xs tracking-widest active:scale-95"
                         )}
                     >
                         <Plus className="w-5 h-5" /> New Project
                     </button>
                 </div>
 
-                {/* Projects Grid */}
+                {/* Projects Content */}
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
-                        <Loader2 className="w-8 h-8 animate-spin text-brand-secondary" />
+                        <Loader2 className="w-10 h-10 animate-spin text-brand-primary" />
                     </div>
-                ) : projects.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-64 bg-white rounded-3xl border border-gray-100 shadow-sm">
-                        <FolderKanban className="w-16 h-16 text-gray-300 mb-4" />
-                        <h3 className="text-lg font-bold text-gray-500">No projects found.</h3>
-                        <p className="text-gray-400">Create a new project to get started.</p>
+                ) : filteredProjects.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm animate-in fade-in zoom-in duration-500">
+                        <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                            <FolderKanban className="w-12 h-12 text-gray-200" />
+                        </div>
+                        <h3 className="text-2xl font-black text-brand-primary mb-2">No projects found</h3>
+                        <p className="text-text-muted font-medium max-w-sm text-center">We couldn't find any projects matching your search or filters.</p>
+                        <button
+                            onClick={() => setSearchValue("")}
+                            className="mt-6 text-brand-primary font-bold hover:underline"
+                        >
+                            Reset search filters
+                        </button>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {projects.map(project => (
+                ) : viewMode === 'card' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {filteredProjects.map(project => (
                             <Link
                                 href={`/admin/projects/${project.id}`}
                                 key={project.id}
-                                className="bg-white rounded-[1.25rem] p-6 shadow-sm shadow-black/5 hover:shadow-md transition-shadow border border-gray-100 group flex flex-col h-full"
+                                className="bg-white rounded-[2rem] p-7 shadow-sm shadow-black/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100/50 group flex flex-col h-full relative overflow-hidden"
                             >
-                                <div className="flex justify-between items-start mb-3">
-                                    <h2 className="text-lg font-bold text-brand-primary group-hover:text-brand-secondary transition-colors line-clamp-1 flex-1 mr-4">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-brand-primary/10 transition-colors" />
+
+                                <div className="flex justify-between items-start mb-4 relative">
+                                    <h2 className="text-xl font-black text-brand-primary line-clamp-1 flex-1 mr-4 tracking-tight">
                                         {project.name}
                                     </h2>
                                     <span className={cn(
-                                        "px-2.5 py-1 text-[10px] font-bold rounded-md uppercase tracking-wide",
-                                        "bg-[#ecfccb] text-[#4d7c0f]" // Matching the mobile app's #ECFCCB and #4D7C0F
+                                        "px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-widest shrink-0",
+                                        project.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-600"
                                     )}>
-                                        {project.status || "UNKNOWN"}
+                                        {project.status || "ACTIVE"}
                                     </span>
                                 </div>
 
-                                <p className="text-sm text-text-secondary mb-6 line-clamp-2 flex-1">
-                                    {project.description || "No description provided."}
+                                <p className="text-sm text-text-muted font-medium mb-8 line-clamp-3 flex-1 leading-relaxed">
+                                    {project.description || "Optimize and track your project performance with our advanced tracking systems."}
                                 </p>
 
-                                <div className="space-y-3 pt-4 border-t border-gray-50 mt-auto">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <div className="w-6 h-6 rounded-full bg-brand-primary/10 flex items-center justify-center">
-                                            <User className="w-3.5 h-3.5 text-brand-primary" />
+                                <div className="space-y-4 pt-6 border-t border-gray-50 mt-auto relative">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100">
+                                            <User className="w-5 h-5 text-brand-primary" />
                                         </div>
-                                        <span className="font-semibold text-text-secondary">Admin:</span>
-                                        <span className="text-brand-primary font-medium truncate flex-1">
-                                            {project.project_admin?.full_name || "Unassigned"}
-                                            {project.project_admin && (
-                                                <span className="text-xs text-text-muted font-normal ml-1">
-                                                    ({project.admin_accepted ? "Accepted" : "Pending"})
-                                                </span>
-                                            )}
-                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-text-muted uppercase tracking-widest leading-none mb-1">Project Admin</span>
+                                            <span className="text-sm font-bold text-brand-primary truncate max-w-[150px]">
+                                                {project.project_admin?.full_name || "Unassigned"}
+                                            </span>
+                                        </div>
+                                        {project.project_admin && (
+                                            <div className={cn(
+                                                "ml-auto w-2 h-2 rounded-full",
+                                                project.admin_accepted ? "bg-emerald-500" : "bg-amber-500"
+                                            )} title={project.admin_accepted ? "Accepted" : "Pending"} />
+                                        )}
                                     </div>
 
-                                    <div className="flex items-center gap-2 text-sm text-text-secondary pl-1">
-                                        <Calendar className="w-4 h-4 text-text-muted" />
-                                        <span className="font-medium">Created:</span>
-                                        <span>{formatDate(project.created_at)}</span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 text-sm text-[#ea580c] pl-1">
-                                        <Flag className="w-4 h-4" />
-                                        <span className="font-semibold">Ends:</span>
-                                        <span className="font-semibold">{formatDate(project.estimated_end_date)}</span>
+                                    <div className="flex items-center justify-between text-xs font-bold bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
+                                        <div className="flex items-center gap-2 text-text-muted">
+                                            <Calendar className="w-3.5 h-3.5" />
+                                            <span>Starts: {formatDate(project.created_at)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-brand-danger">
+                                            <Flag className="w-3.5 h-3.5" />
+                                            <span>{formatDate(project.estimated_end_date)}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </Link>
                         ))}
                     </div>
+                ) : (
+                    <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50/50 text-text-muted text-[10px] font-black uppercase tracking-widest border-b border-gray-100">
+                                    <th className="px-8 py-5">Project Name</th>
+                                    <th className="px-8 py-5">Assigned Admin</th>
+                                    <th className="px-8 py-5">Status</th>
+                                    <th className="px-8 py-5">Timeline</th>
+                                    <th className="px-8 py-5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {filteredProjects.map(project => (
+                                    <tr
+                                        key={project.id}
+                                        className="group hover:bg-gray-50/30 transition-colors cursor-pointer"
+                                        onClick={() => router.push(`/admin/projects/${project.id}`)}
+                                    >
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-brand-primary/5 rounded-xl flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all">
+                                                    <FolderKanban className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-brand-primary">{project.name}</p>
+                                                    <p className="text-xs text-text-muted font-medium truncate max-w-xs">{project.description || "No description"}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 text-xs font-black">
+                                                    {project.project_admin?.full_name?.charAt(0) || "U"}
+                                                </div>
+                                                <span className="text-sm font-bold text-text-secondary">{project.project_admin?.full_name || "Unassigned"}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center gap-2">
+                                                <div className={cn("w-2 h-2 rounded-full", project.status === 'active' ? "bg-emerald-500" : "bg-gray-400")} />
+                                                <span className="text-xs font-black text-brand-primary uppercase tracking-widest">{project.status || "active"}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase">
+                                                    <Calendar className="w-3 h-3" /> {formatDate(project.created_at)}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-brand-danger uppercase">
+                                                    <Flag className="w-3 h-3" /> {formatDate(project.estimated_end_date)}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6 text-right">
+                                            <button className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline">View Details</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
-            {/* Create Project Modal */}
             {showCreateMenu && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">

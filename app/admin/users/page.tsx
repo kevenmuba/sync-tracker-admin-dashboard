@@ -21,7 +21,8 @@ export default function UsersPage() {
     const router = useRouter();
     const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchValue, setSearchValue] = useState("");
+    const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
     // Modal state
     const [showAddMenu, setShowAddMenu] = useState(false);
@@ -84,9 +85,6 @@ export default function UsersPage() {
 
         setAdding(true);
         try {
-            // Note: Since we are using standard auth on the client side without Service Role,
-            // signUp will insert into auth.users and trigger public.users creation via your DB triggers.
-            // WARNING in standard Supabase: signing up a user from client-side logs out the active session!
             const { data, error } = await supabase.auth.signUp({
                 email: newEmail,
                 password: newPassword,
@@ -99,12 +97,11 @@ export default function UsersPage() {
 
             if (error) throw error;
 
-            // Wait for trigger to fire, then update the user role manually since signUp metadata mappings might be restricted
             if (data.user) {
                 await supabase.from('users').update({ role: newRole }).eq('id', data.user.id);
             }
 
-            alert("User created successfully! Note: For security reasons, creating a user from an admin client logs you into their account by default unless using Supabase Admin API.");
+            alert("User created successfully!");
             setShowAddMenu(false);
             setNewEmail("");
             setNewPassword("");
@@ -124,13 +121,10 @@ export default function UsersPage() {
         if (!confirmDelete) return;
 
         try {
-            // Because your DB has onDelete cascade on 'projects.created_by' / 'time_logs.user_id' but potentially not ALL foreign keys,
-            // we will delete from public.users table. 
-            // NOTE: Full proper deletion requires deleting from 'auth.users' via admin api.
             const { error } = await supabase.from('users').delete().eq('id', user.id);
 
             if (error) {
-                alert("Failed to delete user profile. They might be assigned to a Task as a responsible_owner or admin which prevents deletion due to foreign key constraints.");
+                alert("Failed to delete user profile. They might be assigned to a Task or project which prevents deletion due to foreign key constraints.");
                 console.error(error);
                 return;
             }
@@ -143,8 +137,8 @@ export default function UsersPage() {
     };
 
     const filteredUsers = users.filter(user =>
-        (user.full_name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-        (user.email?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+        (user.full_name?.toLowerCase() || "").includes(searchValue.toLowerCase()) ||
+        (user.email?.toLowerCase() || "").includes(searchValue.toLowerCase())
     );
 
     const superAdmins = users.filter(u => u.role === 'super_admin').length;
@@ -153,7 +147,12 @@ export default function UsersPage() {
 
     return (
         <div className="flex flex-col h-full bg-[#f4f6f9] min-h-screen relative">
-            <Topbar />
+            <Topbar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+            />
 
             <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full space-y-8 pb-12">
 
@@ -181,6 +180,7 @@ export default function UsersPage() {
 
                 {/* KPI Role Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {/* ... cards content ... */}
                     <div className="bg-white rounded-[1.5rem] p-6 border border-gray-100 shadow-sm flex items-center gap-5">
                         <div className="w-14 h-14 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500">
                             <UsersIcon className="w-7 h-7" />
@@ -222,19 +222,9 @@ export default function UsersPage() {
                     </div>
                 </div>
 
-                {/* Filters */}
+                {/* Section Title */}
                 <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-brand-primary">All Organization Members</h2>
-                    <div className="relative">
-                        <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by name or email..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-white pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary w-80 shadow-sm"
-                        />
-                    </div>
+                    <h2 className="text-2xl font-bold text-brand-primary">All Organization Members ({filteredUsers.length})</h2>
                 </div>
 
                 {/* Users List */}
@@ -248,14 +238,14 @@ export default function UsersPage() {
                         <h3 className="text-xl font-bold text-gray-500 mb-2">No users found</h3>
                         <p className="text-gray-400">Try adjusting your search criteria or add a new user.</p>
                     </div>
-                ) : (
+                ) : viewMode === 'card' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredUsers.map((user) => (
                             <div key={user.id} className="bg-white rounded-3xl p-6 shadow-sm shadow-black/5 border border-gray-100 relative group overflow-hidden">
 
                                 <button
                                     onClick={() => handleDeleteUser(user)}
-                                    className="absolute top-4 right-4 p-2.5 bg-red-50 text-red-600 rounded-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all hover:bg-red-600 hover:text-white"
+                                    className="absolute top-4 right-4 p-2.5 bg-red-50 text-red-600 rounded-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all hover:bg-red-600 hover:text-white z-10"
                                     title="Remove User"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -293,6 +283,67 @@ export default function UsersPage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                ) : (
+                    /* List View */
+                    <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50/50 text-text-muted text-[10px] font-black uppercase tracking-widest border-b border-gray-100">
+                                    <th className="px-8 py-5">Team Member</th>
+                                    <th className="px-8 py-5">Role</th>
+                                    <th className="px-8 py-5">Email Address</th>
+                                    <th className="px-8 py-5">Join Date</th>
+                                    <th className="px-8 py-5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {filteredUsers.map(user => (
+                                    <tr
+                                        key={user.id}
+                                        className="group hover:bg-gray-50/30 transition-colors"
+                                    >
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center gap-4">
+                                                <img
+                                                    src={getAvatar(user)}
+                                                    alt=""
+                                                    className="w-10 h-10 rounded-full border border-gray-100 shadow-sm"
+                                                />
+                                                <div>
+                                                    <p className="text-sm font-black text-brand-primary">{user.full_name || "Unnamed User"}</p>
+                                                    <p className="text-xs text-text-muted font-bold uppercase tracking-widest">{user.role?.replace('_', ' ')}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <span className={cn(
+                                                "px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-widest",
+                                                user.role === 'super_admin' ? "bg-purple-50 text-purple-600" :
+                                                    user.role === 'project_admin' ? "bg-orange-50 text-orange-600" :
+                                                        "bg-emerald-50 text-emerald-600"
+                                            )}>
+                                                {user.role?.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <span className="text-sm font-bold text-text-secondary">{user.email || 'N/A'}</span>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <span className="text-sm font-bold text-text-muted">{formatDate(user.created_at)}</span>
+                                        </td>
+                                        <td className="px-8 py-6 text-right">
+                                            <button
+                                                onClick={() => handleDeleteUser(user)}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>

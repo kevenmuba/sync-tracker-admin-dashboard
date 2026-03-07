@@ -42,7 +42,8 @@ export default function NotificationsPage() {
     const [userId, setUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"activity" | "unread" | "status" | "global">("activity");
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchValue, setSearchValue] = useState("");
+    const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
     useEffect(() => {
         const init = async () => {
@@ -200,13 +201,18 @@ export default function NotificationsPage() {
     };
 
     const finalFiltered = filteredByTab().filter(n =>
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchQuery.toLowerCase())
+        n.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+        n.message.toLowerCase().includes(searchValue.toLowerCase())
     );
 
     return (
         <div className="flex flex-col h-full bg-[#f4f6f9] min-h-screen">
-            <Topbar />
+            <Topbar
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+            />
             <div className="flex-1 p-8 max-w-[1400px] mx-auto w-full">
 
                 {/* Header Area styled like Users page */}
@@ -217,21 +223,11 @@ export default function NotificationsPage() {
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold text-brand-primary">Activity Log & Tracking</h1>
-                            <p className="text-text-secondary mt-1">Review system notifications and project admin assignments</p>
+                            <p className="text-text-secondary mt-1">Review system notifications and project admin assignments ({finalFiltered.length})</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search activity..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium w-64 focus:bg-white focus:ring-2 focus:ring-brand-primary/20 transition-all outline-none"
-                            />
-                        </div>
                         <button
                             onClick={markAllAsRead}
                             className="bg-brand-primary text-white px-6 py-3 rounded-xl shadow-lg shadow-brand-primary/20 text-sm font-bold hover:bg-brand-primary/90 transition-all flex items-center gap-2"
@@ -353,55 +349,95 @@ export default function NotificationsPage() {
                                     </div>
                                 )}
 
-                                {finalFiltered.map((n) => (
-                                    <div
-                                        key={n.id}
-                                        className={cn(
-                                            "bg-white rounded-3xl p-6 border transition-all flex items-start gap-6 group relative overflow-hidden",
-                                            n.is_read ? "border-gray-50 opacity-70" : "border-brand-primary/20 shadow-sm shadow-black/5"
-                                        )}
-                                    >
-                                        {/* Status Icon */}
-                                        {getStatusIcon(n)}
+                                {viewMode === 'card' ? (
+                                    finalFiltered.map((n) => (
+                                        <div
+                                            key={n.id}
+                                            className={cn(
+                                                "bg-white rounded-3xl p-6 border transition-all flex items-start gap-6 group relative overflow-hidden",
+                                                n.is_read ? "border-gray-50 opacity-70" : "border-brand-primary/20 shadow-sm shadow-black/5"
+                                            )}
+                                        >
+                                            {/* Status Icon */}
+                                            {getStatusIcon(n)}
 
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="flex items-center gap-3">
-                                                    <h4 className="text-base font-bold text-brand-primary">{n.title}</h4>
-                                                    {n.is_project_assignment && (
-                                                        <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-orange-100">
-                                                            Project Sync
-                                                        </span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <div className="flex items-center gap-3">
+                                                        <h4 className="text-base font-bold text-brand-primary">{n.title}</h4>
+                                                        {n.is_project_assignment && (
+                                                            <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-orange-100">
+                                                                Project Sync
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap bg-gray-50 px-2 py-1 rounded">
+                                                        {format(new Date(n.created_at), "HH:mm · MMM d")}
+                                                    </span>
+                                                </div>
+
+                                                <p className="text-text-secondary text-sm font-medium leading-relaxed mb-4">
+                                                    {n.message}
+                                                </p>
+
+                                                <div className="flex items-center gap-4">
+                                                    {!n.is_read && n.user_id === userId && (
+                                                        <button
+                                                            onClick={() => markAsRead(n.id)}
+                                                            className="text-[10px] font-bold text-brand-primary bg-brand-primary/5 px-3 py-1.5 rounded-lg hover:bg-brand-primary hover:text-white transition-all"
+                                                        >
+                                                            Mark as Read
+                                                        </button>
+                                                    )}
+                                                    {n.recipient_name && (
+                                                        <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
+                                                            <User className="w-3 h-3" />
+                                                            Target: {n.recipient_name}
+                                                        </div>
                                                     )}
                                                 </div>
-                                                <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap bg-gray-50 px-2 py-1 rounded">
-                                                    {format(new Date(n.created_at), "HH:mm · MMM d")}
-                                                </span>
-                                            </div>
-
-                                            <p className="text-text-secondary text-sm font-medium leading-relaxed mb-4">
-                                                {n.message}
-                                            </p>
-
-                                            <div className="flex items-center gap-4">
-                                                {!n.is_read && n.user_id === userId && (
-                                                    <button
-                                                        onClick={() => markAsRead(n.id)}
-                                                        className="text-[10px] font-bold text-brand-primary bg-brand-primary/5 px-3 py-1.5 rounded-lg hover:bg-brand-primary hover:text-white transition-all"
-                                                    >
-                                                        Mark as Read
-                                                    </button>
-                                                )}
-                                                {n.recipient_name && (
-                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
-                                                        <User className="w-3 h-3" />
-                                                        Target: {n.recipient_name}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    /* List View */
+                                    <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-gray-50/50 text-text-muted text-[10px] font-black uppercase tracking-widest border-b border-gray-100">
+                                                    <th className="px-8 py-5">Activity</th>
+                                                    <th className="px-8 py-5">Timestamp</th>
+                                                    <th className="px-8 py-5 text-right">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {finalFiltered.map(n => (
+                                                    <tr key={n.id} className={cn("group hover:bg-gray-50/30 transition-colors", n.is_read ? "opacity-60" : "opacity-100")}>
+                                                        <td className="px-8 py-5 text-sm">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="shrink-0">
+                                                                    {n.is_project_assignment ? <Briefcase className="w-4 h-4 text-orange-500" /> : <Bell className="w-4 h-4 text-indigo-500" />}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-brand-primary">{n.title}</p>
+                                                                    <p className="text-xs text-text-muted line-clamp-1">{n.message}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-8 py-5 text-xs text-text-muted font-bold">
+                                                            {format(new Date(n.created_at), "MMM d, HH:mm")}
+                                                        </td>
+                                                        <td className="px-8 py-5 text-right">
+                                                            {!n.is_read && n.user_id === userId && (
+                                                                <button onClick={() => markAsRead(n.id)} className="text-[10px] font-black text-brand-primary hover:underline">Mark read</button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         )}
                     </div>

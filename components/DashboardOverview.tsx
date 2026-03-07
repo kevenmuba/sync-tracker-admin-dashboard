@@ -33,55 +33,179 @@ interface DashboardStats {
     helpRequests: number;
 }
 
-export function DashboardOverview() {
+interface DashboardOverviewProps {
+    searchValue?: string;
+}
+
+export function DashboardOverview({ searchValue = "" }: DashboardOverviewProps) {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [searchResults, setSearchResults] = useState<{
+        projects: any[];
+        tasks: any[];
+    }>({ projects: [], tasks: [] });
 
     useEffect(() => {
-        const fetchStats = async () => {
+        const fetchStatsAndResults = async () => {
             try {
-                // Fetch Projects Count
-                const { count: projectsCount } = await supabase
-                    .from("projects")
-                    .select("*", { count: "exact", head: true });
+                if (!searchValue) {
+                    // Fetch Projects Count
+                    const { count: projectsCount } = await supabase
+                        .from("projects")
+                        .select("*", { count: "exact", head: true });
 
-                // Fetch Tasks Counts by Status
-                const { data: tasksData, error: tasksError } = await supabase
-                    .from("tasks")
-                    .select("status");
+                    // Fetch Tasks Counts by Status
+                    const { data: tasksData, error: tasksError } = await supabase
+                        .from("tasks")
+                        .select("status");
 
-                if (tasksError) throw tasksError;
+                    if (tasksError) throw tasksError;
 
-                const counts = {
-                    totalProjects: projectsCount || 0,
-                    activeTasks: 0,
-                    blockedTasks: 0,
-                    completedTasks: 0,
-                    helpRequests: 0,
-                };
+                    const counts = {
+                        totalProjects: projectsCount || 0,
+                        activeTasks: 0,
+                        blockedTasks: 0,
+                        completedTasks: 0,
+                        helpRequests: 0,
+                    };
 
-                tasksData?.forEach(task => {
-                    if (task.status === 'in_sync' || task.status === 'pending') counts.activeTasks++;
-                    else if (task.status === 'blocked') counts.blockedTasks++;
-                    else if (task.status === 'completed') counts.completedTasks++;
-                    else if (task.status === 'help_requested') counts.helpRequests++;
-                });
+                    tasksData?.forEach(task => {
+                        if (task.status === 'in_sync' || task.status === 'pending') counts.activeTasks++;
+                        else if (task.status === 'blocked') counts.blockedTasks++;
+                        else if (task.status === 'completed') counts.completedTasks++;
+                        else if (task.status === 'help_requested') counts.helpRequests++;
+                    });
 
-                setStats(counts);
+                    setStats(counts);
+                } else {
+                    // Fetch Search Results
+                    const [projectsRes, tasksRes] = await Promise.all([
+                        supabase
+                            .from('projects')
+                            .select('*, project_admin:users!project_admin(full_name)')
+                            .ilike('name', `%${searchValue}%`),
+                        supabase
+                            .from('tasks')
+                            .select('*, projects(name)')
+                            .ilike('title', `%${searchValue}%`)
+                    ]);
+
+                    setSearchResults({
+                        projects: projectsRes.data || [],
+                        tasks: tasksRes.data || []
+                    });
+                }
             } catch (error) {
-                console.error("Error fetching stats:", error);
+                console.error("Error fetching data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchStats();
-    }, []);
+        fetchStatsAndResults();
+    }, [searchValue]);
 
     if (loading) {
         return (
             <div className="flex items-center justify-center p-12">
                 <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+            </div>
+        );
+    }
+
+    if (searchValue) {
+        const hasResults = searchResults.projects.length > 0 || searchResults.tasks.length > 0;
+
+        return (
+            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div>
+                    <h2 className="text-3xl font-black text-brand-primary tracking-tight">Search results for "{searchValue}"</h2>
+                    <p className="text-text-muted font-bold uppercase tracking-widest text-[10px] mt-1">
+                        Found {searchResults.projects.length} projects and {searchResults.tasks.length} tasks
+                    </p>
+                </div>
+
+                {!hasResults ? (
+                    <div className="bg-white rounded-[2.5rem] p-20 flex flex-col items-center text-center border border-gray-100 shadow-sm">
+                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                            <AlertCircle className="w-10 h-10 text-gray-200" />
+                        </div>
+                        <h3 className="text-2xl font-black text-brand-primary mb-2">No matches found</h3>
+                        <p className="text-text-muted font-medium max-w-sm">Try using different keywords or check for spelling errors.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        {/* Projects Column */}
+                        <div className="space-y-6">
+                            <h3 className="text-xs font-black text-text-muted uppercase tracking-[0.2em] flex items-center gap-3">
+                                <FolderKanban className="w-4 h-4 text-brand-secondary" />
+                                Matching Projects
+                            </h3>
+                            <div className="space-y-4">
+                                {searchResults.projects.map(project => (
+                                    <div
+                                        key={project.id}
+                                        onClick={() => window.location.href = `/admin/projects/${project.id}`}
+                                        className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden"
+                                    >
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-brand-primary/5 rounded-full -mr-12 -mt-12 group-hover:bg-brand-primary/10 transition-colors" />
+                                        <div className="flex justify-between items-start mb-2 relative">
+                                            <h4 className="font-black text-brand-primary group-hover:text-brand-secondary transition-colors">{project.name}</h4>
+                                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase tracking-widest shrink-0">
+                                                {project.status || "Active"}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-text-muted font-bold line-clamp-1 mb-4">{project.project_admin?.full_name || "Unassigned"}</p>
+                                        <div className="flex items-center gap-2 text-brand-primary font-black text-[10px] uppercase tracking-widest">
+                                            View Pipeline
+                                            <TrendingUp className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                    </div>
+                                ))}
+                                {searchResults.projects.length === 0 && (
+                                    <p className="text-sm font-bold text-text-muted/40 italic py-10 text-center bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100">No projects match this search</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Tasks Column */}
+                        <div className="space-y-6">
+                            <h3 className="text-xs font-black text-text-muted uppercase tracking-[0.2em] flex items-center gap-3">
+                                <ListTodo className="w-4 h-4 text-brand-primary" />
+                                Matching Tasks
+                            </h3>
+                            <div className="space-y-4">
+                                {searchResults.tasks.map(task => (
+                                    <div
+                                        key={task.id}
+                                        className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h4 className="font-black text-brand-primary line-clamp-1">{task.title}</h4>
+                                                <p className="text-[10px] font-bold text-text-muted mt-1 uppercase tracking-widest flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-primary/30" />
+                                                    {task.projects?.name || "Global Task"}
+                                                </p>
+                                            </div>
+                                            <span className={cn(
+                                                "text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shrink-0",
+                                                task.status === 'completed' ? "bg-emerald-50 text-emerald-600" :
+                                                    task.status === 'blocked' ? "bg-red-50 text-red-600" :
+                                                        "bg-blue-50 text-blue-600"
+                                            )}>
+                                                {task.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {searchResults.tasks.length === 0 && (
+                                    <p className="text-sm font-bold text-text-muted/40 italic py-10 text-center bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100">No tasks match this search</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
