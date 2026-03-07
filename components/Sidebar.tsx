@@ -9,9 +9,9 @@ import { usePathname } from "next/navigation";
 const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
     { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
-    { icon: ListTodo, label: "Task list", href: "/admin/tasks" },
+    // { icon: ListTodo, label: "Task list", href: "/admin/tasks" },
     { icon: Users, label: "Users", href: "/admin/users" },
-    { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+    // { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
     { icon: Bell, label: "Notifications", href: "/admin/notifications", badge: 2 },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
