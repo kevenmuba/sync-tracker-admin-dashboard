@@ -101,6 +101,16 @@ export default function ProjectsPage() {
 
             if (error) throw error;
 
+            // If an admin was assigned, create a notification record for them
+            if (newProjectAdmin) {
+                await supabase.from('notifications').insert({
+                    user_id: newProjectAdmin,
+                    title: "New Project Assignment",
+                    message: `You have been assigned as an admin for the project "${newProjectName}". Please accept the assignment.`,
+                    is_read: false
+                });
+            }
+
             setShowCreateMenu(false);
             setNewProjectName("");
             setNewProjectDesc("");
