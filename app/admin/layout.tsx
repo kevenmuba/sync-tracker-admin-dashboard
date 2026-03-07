@@ -3,15 +3,19 @@
 import React, { useEffect, useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SidebarProvider, useSidebar } from "@/lib/context/SidebarContext";
 
-export default function AdminLayout({
+function AdminLayoutContent({
     children,
 }: {
     children: React.ReactNode;
 }) {
     const router = useRouter();
+    const pathname = usePathname();
+    const { isOpen, setIsOpen } = useSidebar();
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
@@ -44,6 +48,11 @@ export default function AdminLayout({
         checkAuth();
     }, [router]);
 
+    // Close sidebar on route change
+    useEffect(() => {
+        setIsOpen(false);
+    }, [pathname, setIsOpen]);
+
     if (loading) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-[#f4f6f9]">
@@ -58,11 +67,35 @@ export default function AdminLayout({
     if (!authorized) return null;
 
     return (
-        <div className="flex min-h-screen bg-[#f4f6f9]">
-            <Sidebar />
-            <main className="flex-1 ml-64 min-h-screen">
+        <div className="flex min-h-screen bg-[#f4f6f9] overflow-x-hidden">
+            {/* Mobile Overlay */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40 lg:hidden transition-all duration-300"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
+            <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+
+            <main className={cn(
+                "flex-1 min-h-screen transition-all duration-300 w-full",
+                "lg:ml-64" // Fixed margin on large screens
+            )}>
                 {children}
             </main>
         </div>
+    );
+}
+
+export default function AdminLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <SidebarProvider>
+            <AdminLayoutContent>{children}</AdminLayoutContent>
+        </SidebarProvider>
     );
 }

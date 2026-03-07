@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LayoutDashboard, FolderKanban, ListTodo, Wrench, Bell, MessageSquare, Settings, Users, BarChart3 } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Bell, Settings, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -22,7 +22,12 @@ const menuItems: MenuItem[] = [
     { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+    isOpen: boolean;
+    setIsOpen: (value: boolean) => void;
+}
+
+export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     const pathname = usePathname();
     const [unreadCount, setUnreadCount] = useState(0);
     const [userId, setUserId] = useState<string | null>(null);
@@ -81,7 +86,6 @@ export function Sidebar() {
             )
             .subscribe();
 
-        // Also subscribe to user profile changes
         const profileChannel = supabase
             .channel(`profile_${userId}`)
             .on(
@@ -105,15 +109,28 @@ export function Sidebar() {
     }, [userId]);
 
     return (
-        <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen fixed left-0 top-0">
-            <div className="p-8 pb-12 flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center p-2 transform rotate-12">
-                    <div className="w-full h-full bg-white rounded-sm opacity-20" />
+        <aside className={cn(
+            "w-64 bg-white border-r border-gray-100 flex flex-col h-screen fixed left-0 top-0 transition-all duration-300 z-50",
+            isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+        )}>
+            <div className="p-8 pb-12 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center p-2 transform rotate-12">
+                        <div className="w-full h-full bg-white rounded-sm opacity-20" />
+                    </div>
+                    <span className="text-2xl font-bold tracking-tight text-brand-primary">Zemenay</span>
                 </div>
-                <span className="text-2xl font-bold tracking-tight text-brand-primary">BRESS</span>
+
+                {/* Mobile Close Button */}
+                <button
+                    onClick={() => setIsOpen(false)}
+                    className="lg:hidden p-2 text-text-muted hover:text-brand-danger transition-colors bg-gray-50 rounded-xl"
+                >
+                    <X className="w-6 h-6" />
+                </button>
             </div>
 
-            <nav className="flex-1 px-4 space-y-1">
+            <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
                 {menuItems.map((item) => {
                     const isActive = pathname?.startsWith(item.href) || pathname === item.href;
                     const badgeCount = item.isNotification ? unreadCount : 0;
@@ -130,7 +147,7 @@ export function Sidebar() {
                             )}
                         >
                             <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-text-muted group-hover:text-brand-primary")} />
-                            <span className="font-medium">{item.label}</span>
+                            <span className="font-medium text-sm">{item.label}</span>
                             {badgeCount > 0 && (
                                 <span className={cn(
                                     "ml-auto text-xs font-bold px-2 py-0.5 rounded-full",
@@ -144,21 +161,21 @@ export function Sidebar() {
                 })}
             </nav>
 
-            <div className="p-6 mt-auto border-t border-gray-50 space-y-4">
+            <div className="p-6 mt-auto border-t border-gray-50 space-y-4 bg-white">
                 <Link href="/admin/settings" className="flex items-center gap-3 group cursor-pointer hover:bg-gray-50 p-2 rounded-2xl transition-all">
                     <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20 overflow-hidden">
+                        <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center border border-brand-primary/20 overflow-hidden">
                             {profile?.avatar_url ? (
                                 <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                <Users className="w-5 h-5 text-blue-600" />
+                                <Users className="w-5 h-5 text-brand-primary" />
                             )}
                         </div>
                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-brand-success border-2 border-white rounded-full"></div>
                     </div>
                     <div className="flex flex-col truncate">
                         <span className="text-sm font-bold text-brand-primary truncate">{profile?.full_name || "Super Admin"}</span>
-                        <span className="text-xs text-text-muted capitalize">{profile?.role?.replace('_', ' ') || "Master Access"}</span>
+                        <span className="text-[10px] text-text-muted uppercase tracking-wider font-bold">{profile?.role?.replace('_', ' ') || "Master Access"}</span>
                     </div>
                 </Link>
 
@@ -167,9 +184,8 @@ export function Sidebar() {
                         await supabase.auth.signOut();
                         window.location.href = "/";
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-brand-danger hover:bg-brand-danger/5 transition-all text-sm font-bold"
+                    className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-brand-danger bg-brand-danger/5 hover:bg-brand-danger/10 transition-all text-xs font-black uppercase tracking-widest"
                 >
-                    <Settings className="w-4 h-4 rotate-90" />
                     Sign Out
                 </button>
             </div>

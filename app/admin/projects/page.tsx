@@ -152,21 +152,21 @@ export default function ProjectsPage() {
                 onViewModeChange={setViewMode}
             />
 
-            <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
+            <div className="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full">
                 {/* Header Area */}
-                <div className="flex justify-between items-center mb-10 bg-white p-7 rounded-[2rem] shadow-sm border border-gray-100/50">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 bg-white p-5 md:p-7 rounded-[2rem] shadow-sm border border-gray-100/50">
                     <div>
-                        <h1 className="text-3xl font-black text-brand-primary flex items-center gap-3 tracking-tight">
-                            <FolderKanban className="w-9 h-9 text-brand-secondary" />
+                        <h1 className="text-2xl md:text-3xl font-black text-brand-primary flex items-center gap-3 tracking-tight">
+                            <FolderKanban className="w-8 h-8 md:w-9 md:h-9 text-brand-secondary" />
                             Projects Pipeline
                         </h1>
-                        <p className="text-text-secondary font-medium mt-1">Track and audit your organization's projects ({filteredProjects.length})</p>
+                        <p className="text-text-secondary text-sm md:text-base font-medium mt-1">Track and audit your organization's projects ({filteredProjects.length})</p>
                     </div>
                     <button
                         onClick={() => setShowCreateMenu(true)}
                         className={cn(
-                            "flex items-center gap-2 px-7 py-3.5 bg-brand-primary text-white rounded-2xl hover:bg-brand-primary/90 transition-all",
-                            "shadow-xl shadow-brand-primary/25 font-black uppercase text-xs tracking-widest active:scale-95"
+                            "flex items-center justify-center gap-2 px-6 py-3 md:px-7 md:py-3.5 bg-brand-primary text-white rounded-2xl hover:bg-brand-primary/90 transition-all",
+                            "shadow-xl shadow-brand-primary/25 font-black uppercase text-[10px] md:text-xs tracking-widest active:scale-95 w-full md:w-auto"
                         )}
                     >
                         <Plus className="w-5 h-5" /> New Project

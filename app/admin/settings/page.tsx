@@ -286,15 +286,7 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 text-sm font-semibold text-text-secondary bg-gray-50/50 p-4 rounded-2xl group hover:bg-gray-50 transition-colors">
-                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-brand-primary">
-                                        <UserCircle2 className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex flex-col items-start truncate">
-                                        <span className="text-[10px] text-text-muted uppercase tracking-wider leading-none mb-1">User ID</span>
-                                        <span className="truncate w-full font-mono text-[11px]">{profile?.id.substring(0, 12)}...</span>
-                                    </div>
-                                </div>
+                               
                             </div>
                         </div>
                     </div>

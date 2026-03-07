@@ -213,24 +213,24 @@ export default function NotificationsPage() {
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
             />
-            <div className="flex-1 p-8 max-w-[1400px] mx-auto w-full">
+            <div className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full">
 
                 {/* Header Area styled like Users page */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 bg-white p-5 md:p-6 rounded-[2rem] shadow-sm border border-gray-100">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center">
-                            <Bell className="w-7 h-7 text-brand-primary" />
+                        <div className="w-12 h-12 md:w-14 md:h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center shrink-0">
+                            <Bell className="w-6 h-6 md:w-7 md:h-7 text-brand-primary" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-brand-primary">Activity Log & Tracking</h1>
-                            <p className="text-text-secondary mt-1">Review system notifications and project admin assignments ({finalFiltered.length})</p>
+                            <h1 className="text-2xl md:text-3xl font-bold text-brand-primary">Activity Log & Tracking</h1>
+                            <p className="text-text-secondary text-xs md:text-sm mt-0.5 md:mt-1">Review system notifications and project admin assignments ({finalFiltered.length})</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center w-full md:w-auto">
                         <button
                             onClick={markAllAsRead}
-                            className="bg-brand-primary text-white px-6 py-3 rounded-xl shadow-lg shadow-brand-primary/20 text-sm font-bold hover:bg-brand-primary/90 transition-all flex items-center gap-2"
+                            className="bg-brand-primary text-white px-6 py-3 rounded-xl shadow-lg shadow-brand-primary/20 text-sm font-bold hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
                         >
                             <MailOpen className="w-4 h-4" />
                             Clear Unread

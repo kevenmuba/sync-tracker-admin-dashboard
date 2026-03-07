@@ -154,24 +154,24 @@ export default function UsersPage() {
                 onViewModeChange={setViewMode}
             />
 
-            <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full space-y-8 pb-12">
+            <div className="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full space-y-8 pb-12">
 
                 {/* Header Area */}
-                <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 md:p-6 rounded-[2rem] shadow-sm border border-gray-100">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center">
-                            <UsersIcon className="w-7 h-7 text-brand-primary" />
+                        <div className="w-12 h-12 md:w-14 md:h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center shrink-0">
+                            <UsersIcon className="w-6 h-6 md:w-7 md:h-7 text-brand-primary" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-brand-primary">Team Management</h1>
-                            <p className="text-text-secondary mt-1">Add, remove, and track users across your organization</p>
+                            <h1 className="text-2xl md:text-3xl font-bold text-brand-primary">Team Management</h1>
+                            <p className="text-text-secondary text-xs md:text-sm mt-0.5 md:mt-1">Add, remove, and track users organization-wide</p>
                         </div>
                     </div>
                     <button
                         onClick={() => setShowAddMenu(true)}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-3 bg-brand-primary text-white rounded-xl hover:bg-brand-primary/90 transition",
-                            "shadow-lg shadow-brand-primary/30 font-semibold"
+                            "flex items-center justify-center gap-2 px-5 py-3 md:px-6 md:py-3.5 bg-brand-primary text-white rounded-xl hover:bg-brand-primary/90 transition",
+                            "shadow-lg shadow-brand-primary/30 font-bold text-sm md:text-base w-full md:w-auto active:scale-95"
                         )}
                     >
                         <Plus className="w-5 h-5" /> Add New User

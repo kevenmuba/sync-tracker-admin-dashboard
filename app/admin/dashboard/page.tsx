@@ -17,7 +17,7 @@ export default function Home() {
         onViewModeChange={setViewMode}
       />
 
-      <div className="flex-1 p-8 space-y-8 max-w-[1600px] mx-auto w-full">
+      <div className="flex-1 p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto w-full">
         {/* Statistics & Charting Section */}
         <section className="w-full">
           <DashboardOverview searchValue={searchValue} />
