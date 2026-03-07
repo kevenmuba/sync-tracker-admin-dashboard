@@ -26,12 +26,24 @@ export function Sidebar() {
     const pathname = usePathname();
     const [unreadCount, setUnreadCount] = useState(0);
     const [userId, setUserId] = useState<string | null>(null);
+    const [profile, setProfile] = useState<{ full_name: string; avatar_url: string; role: string } | null>(null);
 
     useEffect(() => {
         const fetchUserAndCount = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setUserId(user.id);
+
+                // Fetch Profile
+                const { data: userData } = await supabase
+                    .from("users")
+                    .select("full_name, avatar_url, role")
+                    .eq("id", user.id)
+                    .single();
+
+                if (userData) setProfile(userData);
+
+                // Fetch Notifications
                 const { count } = await supabase
                     .from("notifications")
                     .select("*", { count: "exact", head: true })
@@ -69,8 +81,26 @@ export function Sidebar() {
             )
             .subscribe();
 
+        // Also subscribe to user profile changes
+        const profileChannel = supabase
+            .channel(`profile_${userId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "users",
+                    filter: `id=eq.${userId}`,
+                },
+                (payload) => {
+                    setProfile(payload.new as any);
+                }
+            )
+            .subscribe();
+
         return () => {
             supabase.removeChannel(channel);
+            supabase.removeChannel(profileChannel);
         };
     }, [userId]);
 
@@ -115,18 +145,22 @@ export function Sidebar() {
             </nav>
 
             <div className="p-6 mt-auto border-t border-gray-50 space-y-4">
-                <div className="flex items-center gap-3 group cursor-pointer">
+                <Link href="/admin/settings" className="flex items-center gap-3 group cursor-pointer hover:bg-gray-50 p-2 rounded-2xl transition-all">
                     <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                            <Users className="w-5 h-5 text-blue-600" />
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20 overflow-hidden">
+                            {profile?.avatar_url ? (
+                                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <Users className="w-5 h-5 text-blue-600" />
+                            )}
                         </div>
                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-brand-success border-2 border-white rounded-full"></div>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-sm font-bold text-brand-primary">Super Admin</span>
-                        <span className="text-xs text-text-muted">Master Access</span>
+                    <div className="flex flex-col truncate">
+                        <span className="text-sm font-bold text-brand-primary truncate">{profile?.full_name || "Super Admin"}</span>
+                        <span className="text-xs text-text-muted capitalize">{profile?.role?.replace('_', ' ') || "Master Access"}</span>
                     </div>
-                </div>
+                </Link>
 
                 <button
                     onClick={async () => {
