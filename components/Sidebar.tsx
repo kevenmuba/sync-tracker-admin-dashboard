@@ -7,11 +7,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const menuItems = [
+interface MenuItem {
+    icon: React.ElementType;
+    label: string;
+    href: string;
+    isNotification?: boolean;
+}
+
+const menuItems: MenuItem[] = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
     { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
     { icon: Users, label: "Users", href: "/admin/users" },
-    // { icon: Bell, label: "Notifications", href: "/admin/notifications", isNotification: true },
+    { icon: Bell, label: "Notifications", href: "/admin/notifications", isNotification: true },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
 
@@ -107,21 +114,30 @@ export function Sidebar() {
                 })}
             </nav>
 
-            <div className="p-6 mt-auto border-t border-gray-50">
+            <div className="p-6 mt-auto border-t border-gray-50 space-y-4">
                 <div className="flex items-center gap-3 group cursor-pointer">
                     <div className="relative">
-                        <img
-                            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150"
-                            alt="Profile"
-                            className="w-10 h-10 rounded-full object-cover border-2 border-transparent group-hover:border-brand-primary transition-all"
-                        />
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-brand-danger border-2 border-white rounded-full"></div>
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                            <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-brand-success border-2 border-white rounded-full"></div>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-sm font-bold text-brand-primary">Emily Jonson</span>
-                        <span className="text-xs text-text-muted">jonson@bress.com</span>
+                        <span className="text-sm font-bold text-brand-primary">Super Admin</span>
+                        <span className="text-xs text-text-muted">Master Access</span>
                     </div>
                 </div>
+
+                <button
+                    onClick={async () => {
+                        await supabase.auth.signOut();
+                        window.location.href = "/";
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-brand-danger hover:bg-brand-danger/5 transition-all text-sm font-bold"
+                >
+                    <Settings className="w-4 h-4 rotate-90" />
+                    Sign Out
+                </button>
             </div>
         </aside>
     );
